@@ -101,18 +101,16 @@ portRoyal = [elizabethSwan, willTurner]
 
 -- 4)
 anclarEnIsla :: Isla -> Tripulacion -> Tripulacion
-anclarEnIsla isla tripulacion
-    | length isla == length tripulacion = zipWith sumarABotin tripulacion isla
-    | otherwise = tripulacion
+anclarEnIsla isla tripulacion = aplicaZipCriterio (flip sumarABotin) isla tripulacion
 
 sumarABotin :: Pirata -> Tesoro -> Pirata
 sumarABotin pirata tesoro = pirata { botin = tesoro : (botin pirata)}
 
 -- 5)
 saquearCiudad :: Ciudad -> Tripulacion -> Tripulacion
-saquearCiudad ciudad tripulacion
-    | length ciudad == length tripulacion = zipWith robarJoyas ciudad tripulacion
-    | otherwise = tripulacion
+saquearCiudad ciudad tripulacion = aplicaZipCriterio robarJoyas ciudad tripulacion
+
+aplicaZipCriterio criterio lista1 lista2 = zipWith criterio lista1 lista2 ++ drop (length lista1) lista2
 
 robarJoyas :: Ciudadano -> Pirata -> Pirata
 robarJoyas ciudadano pirata = foldl sumarABotin pirata (tesoroDeseados pirata ciudadano)
@@ -148,9 +146,7 @@ choqueDeTripulaciones :: Tripulacion -> Tripulacion -> Tripulacion
 choqueDeTripulaciones atacantes defensores = manoAMano atacantes (abandonenLaNave defensores)
 
 manoAMano :: Tripulacion -> Tripulacion -> Tripulacion
-manoAMano atacantes defensores
-    | length atacantes == length defensores = zipWith ataqueEntrePiratas atacantes defensores
-    | otherwise = defensores
+manoAMano atacantes defensores = aplicaZipCriterio ataqueEntrePiratas atacantes defensores
 
 abandonenLaNave :: Tripulacion -> Tripulacion
 abandonenLaNave defensores = filter tienenBotin defensores
@@ -159,3 +155,13 @@ tienenBotin :: Pirata -> Bool
 tienenBotin = (>0) . length . botin
 
 -- 9)
+sumarTripulantes :: Ciudad -> Saqueo -> Tripulacion -> Tripulacion
+sumarTripulantes ciudad criterio tripulacion = tripulacion ++ map (flip hacersePirata criterio) ciudad
+
+laPeli = [saquearCiudad portRoyal, 
+  sumarTripulantes [elizabethSwan, willTurner] conCorazon,
+  anclarEnIsla [ron, ron, ron],
+  choqueDeTripulaciones holandesErrante]
+
+estadoDelPerla :: [(Tripulacion -> Tripulacion)] -> Tripulacion -> Tripulacion
+estadoDelPerla eventos tripulacion = foldl (\elPerla evento -> evento $ elPerla) tripulacion eventos
